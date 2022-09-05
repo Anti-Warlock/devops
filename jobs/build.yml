@@ -1,0 +1,23 @@
+.build:
+  stage: build
+  script:
+    - $BUILD_SHELL                                                   #构建项目
+  variables:
+    GIT_CHECKOUT: "true"                                             #切换分支
+  rules:
+    - if: " $RUN_PIPELINE_BUILD == 'no' "                            #是否需要构建
+      when: nerver
+    - when: always
+
+.build-image:
+  stage: build-image
+  script:
+    - docker login -u ${CI_DOCKER_USERNAME} -p ${CI_DOCKER_PASSWORD} #登录Docker私服(username和password建议配置在CI/CD的Variables中)
+    - docker build -t ${IMAGE_NAME} -f ${DOCKER_FILE_PATH}           #构建镜像
+    - docker push ${CI_DOCKER_SERVER}/${IMAGE_NAME}                  #推送镜像到Docker私服
+    - docker rmi ${IMAGE_NAME}                                       #删除镜像
+    - docker logout                                                  #登出Docker私服
+  rules:
+    - if: " $RUN_BUILD_IMAGE == 'no' "                               #是否需要构建Docker镜像
+      when: nerver
+    - when: always

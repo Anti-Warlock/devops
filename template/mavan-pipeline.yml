@@ -1,0 +1,46 @@
+include:
+  - project: 'lx-devops/lx-devops-gitlab_ci'
+    ref: master
+    file: 'templates/default-pipeline.yml'
+
+variables:
+  #全局配置
+  GIT_CLONE_PATH: ${CI_BUILDS_DIR}/builds/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}/${CI_PIPELINE_ID}
+  GIT_CHECKOUT: "false"
+  CACHE_DIR: "target/"
+
+  #作业控制
+  RUN_PIPELINE_BUILD: "yes"     #是否运行构建 yes/no
+  RUN_PIPELINE_TEST: "yes"      #是否运行测试 yes/no
+  RUN_CODE_ANALYSIS: "yes"      #是否代码扫描 yes/no
+  RUN_BUILD_IMAGE: "yes"        #是否生成镜像 yes/no
+  RUN_DEPLOY_ARTIFACTS: "no"    #是否上传制品 yes/no
+  RUN_DEPLOY_K8S: "no"         #是否发布K8S yes/no
+
+  #依赖容器镜像
+  BUILD_IMAGE: "maven:3.6.3-jdk-8"                                                              #MAVEN基础构建镜像
+  CURL_IMAGE: "curlimages/curl:7.70.0"                                                          #curl查看
+  SONAR_IMAGE: "sonarsource/sonar-scanner-cli:latest"                                           #sonar-scanner查看镜像
+  #KUBECTL_IMAGE: "lucj/kubectl:1.17.2"
+
+  #构建测试参数
+  MAVEN_OPTS: "-Dmaven.repo.local=/usr/local/LocalMavenHouse"                                               #maven构建参数并指定maven本地仓库的位置
+  BUILD_SHELL: 'mvn clean package -DskipTests --settings=/usr/local/apache-maven-3.6.1/conf/setting.xml'    #构建命令并指定setting.xml的位置
+
+  #单元测试参数
+  TEST_SHELL: 'mvn test --settings=./settings.xml'                                              #测试命令并指定setting.xml的位置
+  JUNIT_REPORT_PATH: "target/surefire-reports/TEST-*.xml"                                       #单元测试报告
+
+  #代码扫描
+  SONAR_SOURCE_DIR: "src"                                                                       #项目源码目录
+  SONAR_SERVER_URL: "https://47.98.169.178/"                                                    #SonarQube服务器地址
+  SONAR_SCAN_ARGS:  "-Dsonar.sources=${SONAR_SOURCE_DIR}
+                     -Dsonar.java.binaries=target/classes
+                     -Dsonar.java.test.binaries=target/test-classes
+                     -Dsonar.java.surefire.report=target/surefire-reports"                      #SonartQube扫描参数
+
+  #构建镜像
+  CI_REGISTRY: 'https://hub.docker.com/repository/docker/dcfwow/lx-online-register'                                                                               #镜像仓库地址
+  IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"  #镜像名称
+  DOCKER_FILE_PATH: "./DockerFile"                                                              #DockerFile地址
+
